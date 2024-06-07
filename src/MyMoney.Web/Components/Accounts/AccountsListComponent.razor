@@ -1,39 +1,73 @@
 @using MyMoney.Api.Sdk.Api
+@using MyMoney.Api.Sdk.Api.Accounts.Requests
 @using MyMoney.Api.Sdk.Api.Accounts.Responses
 @using MyMoney.Web.Services
 @using MyMoney.Web.Components.UI
 @inject MyMoneyApiClient apiClient;
 @inject CacheService cache;
+@inject IJSRuntime JS;
 
 <div>
     @if (!isLoading)
     {
-    <form @onsubmit="AddAccount">
-        <div>
-            <label for="accountName">Account Name:</label>
-            <input id="accountName" @bind="newAccountName" />
-        </div>
-        <div>
-            <label for="accountAmount">Amount:</label>
-            <input id="accountAmount" type="number" @bind="newAccountAmount" />
-        </div>
-        <button type="submit">Add Account</button>
-    </form>
-
-    <table>
+    <table class="table col-12 col-xl-6">
         <thead>
         <tr>
             <th>Account Name</th>
             <th>Amount</th>
+            <th>Currency</th>
+            <th></th>
         </tr>
         </thead>
         <tbody>
-        @foreach (var account in accounts)
-        {
-        <tr>
-            <td>@account.Name</td>
-            <td>@account.Amount</td>
-        </tr>
+            <tr>
+                <td>
+                    <input id="accountName" 
+                           placeholder="Search..."
+                           class="form-control-sm"
+                           @bind="newAccountName"
+                           @oninput="(text) => OnTypeAccountName(text)" 
+                    />
+                </td>
+                <td>
+                    <input id="accountAmount" 
+                           type="number" 
+                           class="form-control-sm"
+                           @bind="newAccountAmount" />
+                </td>
+                <td>
+                    <select id="currency" 
+                            @bind="newAccountCurrency" 
+                            class="form-control-sm">
+                        <option value="UYU">UYU</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn btn-outline-primary"
+                            disabled="@(!isCreatingAccount)"
+                            @onclick="AddAccount">
+                        Create
+                    </button>
+                </td>
+            </tr>
+            @foreach (var account in accountsFiltered)
+            {
+            <tr>
+                <td>@account.Name</td>
+                <td class="@(account.Amount < 0 ? "text-danger" : "text-success")">
+                    @account.Amount
+                </td>
+                <td>
+                    @account.Currency
+                </td>
+                <td>
+                    <button class="btn btn-outline-danger"
+                            @onclick="() => ShowConfirmDialog(account)">
+                        Delete
+                    </button>
+                </td>
+            </tr>
         }
         </tbody>
     </table>
@@ -46,10 +80,14 @@
 </div>
 
 @code {
+    string token = string.Empty;
     bool isLoading = true;
-    private List<AccountResponse> accounts = new();
+    private List<AccountResponse> accountsFromServer = new();
+    private List<AccountResponse> accountsFiltered = new();
     private string newAccountName;
+    private string newAccountCurrency = "UYU";
     private decimal newAccountAmount;
+    private bool isCreatingAccount = false;
     
     protected override async Task OnInitializedAsync()
     {
@@ -60,11 +98,12 @@
 
     private async Task LoadAccounts()
     {
-        string token = await cache.GetValueAsync<string>("UserToken");
+        token = await cache.GetValueAsync<string>("UserToken");
         var response = await apiClient.Accounts.GetUserAccounts(token);
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
-            accounts = response.Data.Accounts;
+            accountsFromServer = response.Data.Accounts;
+            accountsFiltered = accountsFromServer;
         }
     }
     
@@ -73,18 +112,67 @@
         var newAccount = new AccountResponse
         {
             Name = newAccountName,
-            Amount = newAccountAmount
+            Amount = newAccountAmount,
+            Currency = newAccountCurrency
         };
 
-        accounts.Add(newAccount);
+        accountsFromServer.Add(newAccount);
+        accountsFiltered = accountsFromServer;
 
-        // Aquí puedes añadir la lógica para enviar el nuevo ítem a la API si es necesario.
+        // Add account to server
+        var postRequest = await apiClient.Accounts.PostAccount(token, new CreateAccountRequest()
+        {
+            Name = newAccountName,
+            Currency = newAccountCurrency
+        });
+
+        if (postRequest.StatusCode != System.Net.HttpStatusCode.OK)
+        {
+            accountsFromServer.Remove(newAccount);
+            accountsFiltered = accountsFromServer;
+        }
         
-        // Resetear los campos del formulario
+        // Reset fields
         newAccountName = string.Empty;
         newAccountAmount = 0;
+        isCreatingAccount = false;
+    }
 
-        // Evitar que el formulario se recargue
-        StateHasChanged();
+    private void RemoveAccount(AccountResponse account)
+    {
+        
+        accountsFromServer.Remove(account);
+        accountsFiltered = accountsFromServer;
+    }
+    
+    private async Task ShowConfirmDialog(AccountResponse account)
+    {
+        var result = await JS.InvokeAsync<bool>("showConfirmDialog", "Are you sure?");
+        if (result)
+        {
+            RemoveAccount(account);
+        }
+    }
+
+    private Task DoSomething()
+    {
+        // Implement your logic here
+        return Task.CompletedTask;
+    }
+
+    private void OnTypeAccountName(ChangeEventArgs e)
+    {
+        newAccountName = e?.Value?.ToString() ?? string.Empty;
+        accountsFiltered = accountsFromServer
+            .Where(a => a.Name.Contains(newAccountName, StringComparison.InvariantCultureIgnoreCase))
+            .ToList();
+
+        isCreatingAccount = accountsFiltered.All(a => a.Name.ToLower() != newAccountName.ToLower()) && !string.IsNullOrWhiteSpace(newAccountName);
     }
 }
+
+<script>
+    function showConfirmDialog(message) {
+        return confirm(message);
+    }
+</script>
