@@ -1,0 +1,90 @@
+@using MyMoney.Api.Sdk.Api
+@using MyMoney.Api.Sdk.Api.Accounts.Responses
+@using MyMoney.Web.Services
+@using MyMoney.Web.Components.UI
+@inject MyMoneyApiClient apiClient;
+@inject CacheService cache;
+
+<div>
+    @if (!isLoading)
+    {
+    <form @onsubmit="AddAccount">
+        <div>
+            <label for="accountName">Account Name:</label>
+            <input id="accountName" @bind="newAccountName" />
+        </div>
+        <div>
+            <label for="accountAmount">Amount:</label>
+            <input id="accountAmount" type="number" @bind="newAccountAmount" />
+        </div>
+        <button type="submit">Add Account</button>
+    </form>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Account Name</th>
+            <th>Amount</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var account in accounts)
+        {
+        <tr>
+            <td>@account.Name</td>
+            <td>@account.Amount</td>
+        </tr>
+        }
+        </tbody>
+    </table>
+    }
+    else
+    {
+        <p>Loading user accounts</p>
+        <Spinner/>
+    }
+</div>
+
+@code {
+    bool isLoading = true;
+    private List<AccountResponse> accounts = new();
+    private string newAccountName;
+    private decimal newAccountAmount;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await LoadAccounts();
+        isLoading = false;
+    }
+
+    private async Task LoadAccounts()
+    {
+        string token = await cache.GetValueAsync<string>("UserToken");
+        var response = await apiClient.Accounts.GetUserAccounts(token);
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            accounts = response.Data.Accounts;
+        }
+    }
+    
+    private async Task AddAccount()
+    {
+        var newAccount = new AccountResponse
+        {
+            Name = newAccountName,
+            Amount = newAccountAmount
+        };
+
+        accounts.Add(newAccount);
+
+        // Aquí puedes añadir la lógica para enviar el nuevo ítem a la API si es necesario.
+        
+        // Resetear los campos del formulario
+        newAccountName = string.Empty;
+        newAccountAmount = 0;
+
+        // Evitar que el formulario se recargue
+        StateHasChanged();
+    }
+}

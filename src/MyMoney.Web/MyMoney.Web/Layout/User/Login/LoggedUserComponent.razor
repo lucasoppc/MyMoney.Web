@@ -1,0 +1,69 @@
+
+@using Microsoft.AspNetCore.Components.Web
+@using System
+@using MyMoney.Web.Services
+@inject CacheService CacheService
+@inject NavigationManager navigation;
+
+<style>
+    .logout-menu {
+        display: inline;
+        position: absolute;
+        background-color: grey;
+        top: 70px;
+        right: 20px;
+        z-index: 1000;
+        animation: fadeInDown 0.5s;
+    }
+</style>
+
+@if (showLogout)
+{
+    <div class="row align-items-center">
+        <div class="col">
+            <div class="col d-flex align-items-center justify-content-between">
+                <p class="m-0">Lucas Hernandez</p>
+                <div class=""  @onclick="Logout">
+                    <a class="btn btn-outline-danger">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool showLogout = false;
+    private string UserName = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        OnInitializedAsync();
+    }
+    protected async Task OnInitializedAsync()
+    {
+        CacheService.Subscribe("UserToken", OnUserNameChanged);
+        UserName = await CacheService.GetValueAsync<string>("UserToken");
+        showLogout = !string.IsNullOrWhiteSpace(UserName);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnUserNameChanged(object? value)
+    {
+        if(value is not null)
+        {
+            UserName = value.ToString();
+            showLogout = true;
+            InvokeAsync(StateHasChanged);
+        }
+        else
+        {
+            showLogout = false;
+        }
+    }
+
+    private async Task Logout()
+    {
+        await CacheService.RemoveAsync("UserToken");
+        navigation.NavigateTo("/login");
+    }
+}

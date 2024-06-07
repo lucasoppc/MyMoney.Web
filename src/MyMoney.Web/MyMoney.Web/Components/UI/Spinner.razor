@@ -1,0 +1,32 @@
+<div class="spinner-container" style="width:@Width; height:@Width;">
+    <div class="spinner" style="width:@Width; height:@Width;"></div>
+</div>
+
+@code {
+[Parameter]
+public string Width { get; set; } = "64px"; // Valor por defecto
+}
+
+
+<style>
+    .spinner-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .spinner {
+        border: 8px solid rgba(0, 0, 0, 0.1);
+        border-left-color: #09f;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+
+</style>
