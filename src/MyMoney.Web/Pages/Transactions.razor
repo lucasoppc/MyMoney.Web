@@ -1,0 +1,177 @@
+﻿@page "/account/{accountId}"
+@using MyMoney.Api.Sdk.Api
+@using MyMoney.Api.Sdk.Api.Transactions.Requests
+@using MyMoney.Api.Sdk.Api.Transactions.Responses
+@using MyMoney.Web.Services
+@using MyMoney.Web.Components.UI
+@inject MyMoneyApiClient client
+@inject CacheService cache
+@inject NavigationManager navigation
+@inject IJSRuntime JS
+
+<h3>Account Transactions</h3>
+
+@if (transactions == null)
+{
+    <Spinner />
+}
+else
+{
+    <table class="table table-hover col-12 col-xl-6">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Currency</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <input id="newTransactionDate" 
+                           type="date"
+                           class="form-control-sm"
+                           @bind="newTransactionDate"
+                    />
+                </td>
+                <td>
+                    <input id="newTransactionDescription" 
+                           type="text" 
+                           class="form-control-sm"
+                           @bind="newTransactionDescription"
+                           @oninput="(text) => OnTypeTransactionDescription(text)" 
+                    />
+                </td>
+                <td>
+                    <input id="newTransactionAmount" 
+                            @bind="newTransactionAmount" 
+                            class="form-control-sm"
+                    />
+                </td>
+                <td>
+                    <button class="btn btn-outline-primary"
+                            disabled="@(!isCreatingTransaction)"
+                            @onclick="CreateTransaction">
+                        Create
+                    </button>
+                </td>
+                <td>
+                    
+                </td>
+            </tr>
+            @foreach (var transaction in transactions)
+            {
+            <tr @onclick="() => OnClickRow(transaction)">
+                <td>@transaction.Date.ToString("dd/MM/yyyy")</td>
+                <td>@transaction.Description</td>
+                <td class="@(transaction.Amount < 0 ? "text-danger" : "text-success")">
+                    @transaction.Amount
+                </td>
+                <td>
+                    @transaction.Currency
+                </td>
+                <td>
+                    <button class="btn btn-outline-danger"
+                            @onclick="() => ShowConfirmDialog(transaction)">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter]
+    public string accountId { get; set; }
+    
+    string token = string.Empty;
+    private List<TransactionResponse> transactions;
+
+    private bool isCreatingTransaction = false;
+    private DateTime newTransactionDate = DateTime.Today;
+    private string newTransactionDescription;
+    private decimal newTransactionAmount;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var result = await client.Transactions.GetAccountTransactions(token, accountId);
+        if (result.StatusCode != System.Net.HttpStatusCode.OK)
+        {
+            
+        }
+        else
+        {
+            transactions = result.Data.Transactions.OrderByDescending(t => t.Date).ToList();
+        }
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        token = await cache.GetValueAsync<string>("UserToken");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            navigation.NavigateTo("/login");
+        }
+        
+    }
+
+    private void OnTypeTransactionDescription(ChangeEventArgs e)
+    {
+        newTransactionDescription = e?.Value?.ToString() ?? string.Empty;
+        var transactionsFiltered = transactions
+            .Where(t => t.Description.Contains(newTransactionDescription, StringComparison.InvariantCultureIgnoreCase))
+            .ToList();
+
+        isCreatingTransaction = transactionsFiltered.All(t => t.Description.ToLower() != newTransactionDescription.ToLower()) && !string.IsNullOrWhiteSpace(newTransactionDescription);
+    }
+    
+    private void OnClickRow(TransactionResponse transaction)
+    {
+        
+    }
+
+    private async Task CreateTransaction()
+    {
+        var transaction = new CreateTransactionRequest
+        {
+            AccountId = accountId,
+            Amount = newTransactionAmount,
+            Currency = "UYU",
+            Date = newTransactionDate.ToString("yyyy-MM-dd"),
+            Description = newTransactionDescription
+        };
+
+        var result = await client.Transactions.PostTransaction(token, transaction);
+
+        if (result.IsSuccessfulStatusCode)
+        {
+            await OnParametersSetAsync();
+        }
+    }
+    
+    private async Task ShowConfirmDialog(TransactionResponse transaction)
+    {
+        var result = await JS.InvokeAsync<bool>("showConfirmDialog", "Are you sure?");
+        if (result)
+        {
+            
+        }
+    }
+}
+
+<script>
+    function showConfirmDialog(message) {
+        return confirm(message);
+    }
+</script>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #8e8a8a;
+        cursor: pointer;
+    }
+</style>

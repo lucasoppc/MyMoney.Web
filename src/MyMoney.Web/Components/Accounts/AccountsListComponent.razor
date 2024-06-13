@@ -6,11 +6,12 @@
 @inject MyMoneyApiClient apiClient;
 @inject CacheService cache;
 @inject IJSRuntime JS;
+@inject NavigationManager navigation;
 
 <div>
     @if (!isLoading)
     {
-    <table class="table col-12 col-xl-6">
+    <table class="table table-hover col-12 col-xl-6">
         <thead>
         <tr>
             <th>Account Name</th>
@@ -53,7 +54,7 @@
             </tr>
             @foreach (var account in accountsFiltered)
             {
-            <tr>
+            <tr @onclick="() => OnClickRow(account)">
                 <td>@account.Name</td>
                 <td class="@(account.Amount < 0 ? "text-danger" : "text-success")">
                     @account.Amount
@@ -96,6 +97,11 @@
         isLoading = false;
     }
 
+    private void OnClickRow(AccountResponse account)
+    {
+        navigation.NavigateTo($"/account/{account.Id}");
+    }
+    
     private async Task LoadAccounts()
     {
         token = await cache.GetValueAsync<string>("UserToken");
@@ -176,3 +182,10 @@
         return confirm(message);
     }
 </script>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #8e8a8a;
+        cursor: pointer;
+    }
+</style>
