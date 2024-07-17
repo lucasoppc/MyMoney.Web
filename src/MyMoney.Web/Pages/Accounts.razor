@@ -1,5 +1,6 @@
 ﻿@using MyMoney.Web.Services
 @using MyMoney.Web.Components.Accounts
+@using MyMoney.Web.Components.Transactions
 @inject CacheService cache;
 @inject NavigationManager navigation;
 
@@ -8,8 +9,8 @@
 
 <link href="css/bootstrap.min.css" rel="stylesheet" />
 <div>
-    <p>Home Page</p>
-    <i class="bi bi-trash"></i>
+    <h1>My Accounts</h1>
+    <p class="text-info">Accounts represent different concepts used to group transactions and manage amounts of money.</p>
     
     <AccountsListComponent />
 </div>

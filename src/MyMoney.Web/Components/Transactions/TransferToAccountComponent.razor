@@ -1,0 +1,89 @@
+@using MyMoney.Api.Sdk.Api
+@using MyMoney.Api.Sdk.Api.Accounts.Responses
+@using MyMoney.Api.Sdk.Api.Transactions.Requests
+@using MyMoney.Api.Sdk.Api.Transactions.Responses
+@using MyMoney.Web.Services
+@inject MyMoneyApiClient apiClient
+@inject CacheService cache
+
+<div>
+    <p>Transfer to account</p>
+    <div class="">
+        <div class="row">
+            <div class="col-lg-3 col-sm-12">
+                <label for="accountFrom">From</label>
+                <input id="accountFrom"  value="@AccountFrom?.Name" disabled />
+            </div>
+            <div class="col-lg-3 col-sm-12">
+                <label for="accountTo">To</label>
+                <select @bind="AccountToId" id="accountTo">
+                    <option value="">Select account</option>
+                    @foreach (var account in Accounts)
+                    {
+                        <option value="@account.Id">@account.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-3 col-sm-12">
+                <label for="amount">Amount</label>
+                <input @bind="Amount" id="amount" type="number" />
+            </div>
+            <div class="col-lg-3 col-sm-12">
+                <button class="btn btn-primary" @onclick="Transfer">Transfer</button>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+
+@code {
+    [Parameter]
+    public AccountResponse AccountFrom { get; set; }
+    
+    [Parameter]
+    public EventCallback OnTransfer { get; set; }
+
+    public string AccountToId { get; set; }
+    public decimal Amount { get; set; }
+
+    public string token;
+    
+    private List<AccountResponse> Accounts { get; set; } = new List<AccountResponse>();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        token = await cache.GetValueAsync<string>("UserToken");
+        await LoadAccounts();
+    }
+
+    private async Task LoadAccounts()
+    {
+        var response = await apiClient.Accounts.GetUserAccounts(token);
+        if (response.IsSuccessfulStatusCode)
+        {
+            Accounts = response.Data.Accounts;
+        }
+    }
+
+    private async Task Transfer()
+    {
+        if (!string.IsNullOrWhiteSpace(AccountToId) && Amount > 0)
+        {
+            var response = await apiClient.Transactions.TransferToAccount(token, new TransferToAccountRequest
+            {
+                Amount = Amount,
+                FromAccountId = AccountFrom.Id,
+                ToAccountId = AccountToId
+            });
+
+            if (response.IsSuccessfulStatusCode)
+            {
+                AccountToId = string.Empty;
+                Amount = 0;
+                await OnTransfer.InvokeAsync();
+            }
+        }
+    }
+}

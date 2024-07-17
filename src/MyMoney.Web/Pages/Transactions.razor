@@ -1,15 +1,25 @@
 ﻿@page "/account/{accountId}"
+@using System.Globalization
 @using MyMoney.Api.Sdk.Api
+@using MyMoney.Api.Sdk.Api.Accounts.Responses
 @using MyMoney.Api.Sdk.Api.Transactions.Requests
 @using MyMoney.Api.Sdk.Api.Transactions.Responses
 @using MyMoney.Web.Services
 @using MyMoney.Web.Components.UI
+@using MyMoney.Web.Components.Transactions
 @inject MyMoneyApiClient client
 @inject CacheService cache
 @inject NavigationManager navigation
 @inject IJSRuntime JS
 
-<h3>Account Transactions</h3>
+<div class="row">
+    <h3 class="col-6">Account "@account?.Name" Transactions</h3>
+    <h3 class="col-6 text-end">$ @account?.Amount</h3>
+</div>
+
+<div class="highlighted-background">
+    <TransferToAccountComponent AccountFrom="@account" OnTransfer="UpdateTransactions"/>
+</div>
 
 @if (transactions == null)
 {
@@ -17,71 +27,80 @@
 }
 else
 {
-    <table class="table table-hover col-12 col-xl-6">
-        <thead>
-        <tr>
-            <th>Date</th>
-            <th>Description</th>
-            <th>Amount</th>
-            <th>Currency</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>
-                    <input id="newTransactionDate" 
-                           type="date"
-                           class="form-control-sm"
-                           @bind="newTransactionDate"
-                    />
-                </td>
-                <td>
-                    <input id="newTransactionDescription" 
-                           type="text" 
-                           class="form-control-sm"
-                           @bind="newTransactionDescription"
-                           @oninput="(text) => OnTypeTransactionDescription(text)" 
-                    />
-                </td>
-                <td>
-                    <input id="newTransactionAmount" 
-                            @bind="newTransactionAmount" 
-                            class="form-control-sm"
-                    />
-                </td>
-                <td>
-                    <button class="btn btn-outline-primary"
-                            disabled="@(!isCreatingTransaction)"
-                            @onclick="CreateTransaction">
-                        Create
-                    </button>
-                </td>
-                <td>
-                    
-                </td>
-            </tr>
-            @foreach (var transaction in transactions)
+<table class="table table-hover table-responsive-sm col-12 col-xl-6">
+    <thead>
+    <tr>
+        <th>Date</th>
+        <th>Description</th>
+        <th>Amount</th>
+        <th>Currency</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td class="table-responsive-cell">
+            <input id="newTransactionDate"
+                   type="date"
+                   class="form-control form-control-sm"
+                   @bind="newTransactionDate"
+            />
+        </td>
+        <td>
+            <input id="newTransactionDescription"
+                   type="text"
+                   class="form-control form-control-sm"
+                   @bind="newTransactionDescription"
+                   @oninput="(text) => OnTypeTransactionDescription(text)"
+            />
+        </td>
+        <td>
+            <input id="newTransactionAmount"
+                   type="number"
+                   class="form-control form-control-sm text-end"
+                   @bind="newTransactionAmount"
+            />
+        </td>
+        <td>
+            @if(isLoading)
             {
-            <tr @onclick="() => OnClickRow(transaction)">
-                <td>@transaction.Date.ToString("dd/MM/yyyy")</td>
-                <td>@transaction.Description</td>
-                <td class="@(transaction.Amount < 0 ? "text-danger" : "text-success")">
-                    @transaction.Amount
-                </td>
-                <td>
-                    @transaction.Currency
-                </td>
-                <td>
-                    <button class="btn btn-outline-danger"
-                            @onclick="() => ShowConfirmDialog(transaction)">
-                        Delete
-                    </button>
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+            <Spinner Width="40px" />
+            }
+            else
+            {
+            <button class="btn btn-outline-primary btn-sm"
+                    disabled="@(!isCreatingTransaction)"
+                    @onclick="CreateTransaction">
+                Create
+            </button>
+            }
+        </td>
+        <td>
+
+        </td>
+    </tr>
+    @foreach (var transaction in transactions)
+    {
+    <tr @onclick="() => OnClickRow(transaction)">
+        <td class="table-responsive-cell">@transaction.Date.ToString("dd/MM/yyyy")</td>
+        <td class="table-responsive-cell">@transaction.Description</td>
+        <td class="@(transaction.Amount < 0 ? "text-danger" : "text-success") table-responsive-cell text-end">
+            @transaction.Amount
+        </td>
+        <td>
+            @transaction.Currency
+        </td>
+        <td>
+            <button class="btn btn-outline-danger btn-sm"
+                    @onclick="() => ShowConfirmDialog(transaction)">
+                Delete
+            </button>
+        </td>
+    </tr>
+    }
+    </tbody>
+</table>
+
 }
 
 @code {
@@ -90,23 +109,36 @@ else
     
     string token = string.Empty;
     private List<TransactionResponse> transactions;
+    private AccountResponse account;
 
+    private bool isLoading = false;
     private bool isCreatingTransaction = false;
-    private DateTime newTransactionDate = DateTime.Today;
+    private DateTime newTransactionDate = DateTime.Now;
     private string newTransactionDescription;
     private decimal newTransactionAmount;
 
     protected override async Task OnParametersSetAsync()
     {
-        var result = await client.Transactions.GetAccountTransactions(token, accountId);
-        if (result.StatusCode != System.Net.HttpStatusCode.OK)
+        var getAccount = client.Accounts.GetUserAccounts(token);
+        var getTransactions = client.Transactions.GetAccountTransactions(token, accountId);
+        await Task.WhenAll(getAccount, getTransactions);
+        if (getTransactions.Result.IsSuccessfulStatusCode)
         {
-            
+            transactions = getTransactions.Result.Data.Transactions.OrderByDescending(t => t.Date).ToList();
         }
-        else
+        if (getAccount.Result.IsSuccessfulStatusCode)
         {
-            transactions = result.Data.Transactions.OrderByDescending(t => t.Date).ToList();
+            account = getAccount.Result.Data.Accounts.FirstOrDefault(a => a.Id == accountId);
         }
+        
+        StateHasChanged();
+    }
+
+    private async Task UpdateTransactions()
+    {
+        // wait a few seconds for the transaction be processed and amount updated
+        Thread.Sleep(5000);
+        await OnParametersSetAsync();
     }
     
     protected override async Task OnInitializedAsync()
@@ -136,12 +168,13 @@ else
 
     private async Task CreateTransaction()
     {
+        isLoading = true;
         var transaction = new CreateTransactionRequest
         {
             AccountId = accountId,
             Amount = newTransactionAmount,
             Currency = "UYU",
-            Date = newTransactionDate.ToString("yyyy-MM-dd"),
+            Date = newTransactionDate.ToString("O"),
             Description = newTransactionDescription
         };
 
@@ -151,6 +184,8 @@ else
         {
             await OnParametersSetAsync();
         }
+        
+        isLoading = false;
     }
     
     private async Task ShowConfirmDialog(TransactionResponse transaction)
@@ -158,7 +193,17 @@ else
         var result = await JS.InvokeAsync<bool>("showConfirmDialog", "Are you sure?");
         if (result)
         {
-            
+            var revertTransaction = new CreateTransactionRequest
+            {
+                AccountId = transaction.AccountId,
+                Amount = transaction.Amount * -1,
+                Currency = transaction.Currency,
+                Date = DateTime.Now.ToString("O"),
+                Description = $"Reverted: {transaction.Description}"
+            };
+
+            await client.Transactions.PostTransaction(token, revertTransaction);
+            await OnParametersSetAsync();
         }
     }
 }
@@ -173,5 +218,33 @@ else
     .table-hover tbody tr:hover {
         background-color: #8e8a8a;
         cursor: pointer;
+    }
+    .highlighted-background {
+        background-color: #f0f8ff; /* Puedes cambiar este color al que prefieras */
+        padding: 10px; /* Opcional: Agrega un poco de padding para mayor claridad */
+        border-radius: 5px; /* Opcional: Agrega bordes redondeados */
+    }
+    .table-responsive-cell {
+        overflow-x: auto;
+        white-space: nowrap;
+        max-width: 40px;
+    }
+    .table-responsive-cell td {
+        white-space: nowrap;
+    }
+    @@media (max-width: 576px) {
+    .table thead th {
+        font-size: 0.8rem; /* Reduce el tamaño de los encabezados */
+    }
+    .table tbody td {
+        font-size: 0.8rem; /* Reduce el tamaño de las celdas */
+    }
+    .form-control-sm {
+        padding: 0.25rem 0.5rem; /* Reduce el padding de los inputs pequeños */
+    }
+    .btn-sm {
+        padding: 0.25rem 0.5rem; /* Reduce el padding de los botones pequeños */
+        font-size: 0.8rem; /* Reduce el tamaño de fuente de los botones */
+    }
     }
 </style>

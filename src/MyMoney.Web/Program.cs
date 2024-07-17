@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MyMoney.Api.Sdk.Configuration;
 using MyMoney.Web;
-using MyMoney.Web.Filters;
 using MyMoney.Web.Services;
 
 
@@ -17,6 +16,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<CacheService>();
 builder.Services.AddMyMoneyApiSdk(new MyMoneyApiSdkOptions()
 {
+    //BaseUrl = "https://localhost:7041/",
     BaseUrl = "https://oppc-my-money-api.azurewebsites.net",
     TimeoutInSeconds = 30,
 });

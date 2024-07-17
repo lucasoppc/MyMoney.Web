@@ -101,7 +101,7 @@
             if (loginResponse.StatusCode == System.Net.HttpStatusCode.OK)
             {
                 await CacheService.SetValueAsync<string>("UserToken", loginResponse.Data.token);
-                navigation.NavigateTo("/home");
+                navigation.NavigateTo("/accounts");
             }
             else
             {

@@ -11,67 +11,78 @@
 <div>
     @if (!isLoading)
     {
-    <table class="table table-hover col-12 col-xl-6">
+    <table class="table table-hover table-responsive-sm col-12 col-xl-6">
         <thead>
         <tr>
             <th>Account Name</th>
             <th>Amount</th>
             <th>Currency</th>
+            <th>Bank Account</th>
             <th></th>
         </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>
-                    <input id="accountName" 
-                           placeholder="Search..."
-                           class="form-control-sm"
-                           @bind="newAccountName"
-                           @oninput="(text) => OnTypeAccountName(text)" 
-                    />
-                </td>
-                <td>
-                    <input id="accountAmount" 
-                           type="number" 
-                           class="form-control-sm"
-                           @bind="newAccountAmount" />
-                </td>
-                <td>
-                    <select id="currency" 
-                            @bind="newAccountCurrency" 
-                            class="form-control-sm">
-                        <option value="UYU">UYU</option>
-                        <option value="USD">USD</option>
-                    </select>
-                </td>
-                <td>
-                    <button class="btn btn-outline-primary"
-                            disabled="@(!isCreatingAccount)"
-                            @onclick="AddAccount">
-                        Create
-                    </button>
-                </td>
-            </tr>
-            @foreach (var account in accountsFiltered)
-            {
-            <tr @onclick="() => OnClickRow(account)">
-                <td>@account.Name</td>
-                <td class="@(account.Amount < 0 ? "text-danger" : "text-success")">
-                    @account.Amount
-                </td>
-                <td>
-                    @account.Currency
-                </td>
-                <td>
-                    <button class="btn btn-outline-danger"
-                            @onclick="() => ShowConfirmDialog(account)">
-                        Delete
-                    </button>
-                </td>
-            </tr>
+        <tr>
+            <td>
+                <input id="accountName"
+                       placeholder="Search..."
+                       class="form-control form-control-sm"
+                       @bind="newAccountName"
+                       @oninput="(text) => OnTypeAccountName(text)"
+                />
+            </td>
+            <td>
+                <input id="accountAmount"
+                       type="number"
+                       class="form-control form-control-sm"
+                       @bind="newAccountAmount" />
+            </td>
+            <td>
+                <select id="currency"
+                        @bind="newAccountCurrency"
+                        class="form-control form-control-sm">
+                    <option value="UYU">UYU</option>
+                    <option value="USD">USD</option>
+                </select>
+            </td>
+            <td>
+                <input id="bankAccount"
+                       placeholder="Bank Account"
+                       class="form-control form-control-sm"
+                       @bind="newBankAccount" />
+            </td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm"
+                        disabled="@(!isCreatingAccount)"
+                        @onclick="AddAccount">
+                    Create
+                </button>
+            </td>
+        </tr>
+        @foreach (var account in accountsFiltered.OrderBy(x => x.Name))
+        {
+        <tr>
+            <td @onclick="() => OnClickRow(account)" class="table-responsive-cell">@account.Name</td>
+            <td @onclick="() => OnClickRow(account)" class="@(account.Amount < 0 ? "text-danger" : "text-success") table-responsive-cell">
+                @account.Amount
+            </td>
+            <td @onclick="() => OnClickRow(account)">
+                @account.Currency
+            </td>
+            <td @onclick="() => OnClickRow(account)" class="table-responsive-cell">
+                @account.BankAccount
+            </td>
+            <td>
+                <button class="btn btn-outline-danger btn-sm"
+                        @onclick="() => ShowConfirmDialog(account)">
+                    Delete
+                </button>
+            </td>
+        </tr>
         }
         </tbody>
     </table>
+
     }
     else
     {
@@ -87,6 +98,7 @@
     private List<AccountResponse> accountsFiltered = new();
     private string newAccountName;
     private string newAccountCurrency = "UYU";
+    private string newBankAccount;
     private decimal newAccountAmount;
     private bool isCreatingAccount = false;
     
@@ -111,44 +123,56 @@
             accountsFromServer = response.Data.Accounts;
             accountsFiltered = accountsFromServer;
         }
+        else if(response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            await cache.RemoveAsync("UserToken");
+            navigation.NavigateTo("/login");
+        }
     }
     
     private async Task AddAccount()
     {
-        var newAccount = new AccountResponse
-        {
-            Name = newAccountName,
-            Amount = newAccountAmount,
-            Currency = newAccountCurrency
-        };
-
-        accountsFromServer.Add(newAccount);
-        accountsFiltered = accountsFromServer;
-
+        this.isLoading = true;
         // Add account to server
         var postRequest = await apiClient.Accounts.PostAccount(token, new CreateAccountRequest()
         {
             Name = newAccountName,
+            BankAccount = newBankAccount,
             Currency = newAccountCurrency
         });
 
-        if (postRequest.StatusCode != System.Net.HttpStatusCode.OK)
+        if (postRequest.StatusCode == System.Net.HttpStatusCode.OK)
         {
-            accountsFromServer.Remove(newAccount);
-            accountsFiltered = accountsFromServer;
+            await this.LoadAccounts();
         }
+
+        this.isLoading = false;
+        
+        if (postRequest.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            await cache.RemoveAsync("UserToken");
+            navigation.NavigateTo("/login");
+        }
+
+        StateHasChanged();
         
         // Reset fields
         newAccountName = string.Empty;
         newAccountAmount = 0;
+        newBankAccount = string.Empty;
         isCreatingAccount = false;
     }
-
-    private void RemoveAccount(AccountResponse account)
+    
+    private async Task RemoveAccountAsync(AccountResponse account)
     {
+        var response = await apiClient.Accounts.DeleteAccount(token, account.Id);
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            accountsFromServer.Remove(account);
+            accountsFiltered = accountsFromServer;
+            StateHasChanged();
+        }
         
-        accountsFromServer.Remove(account);
-        accountsFiltered = accountsFromServer;
     }
     
     private async Task ShowConfirmDialog(AccountResponse account)
@@ -156,7 +180,7 @@
         var result = await JS.InvokeAsync<bool>("showConfirmDialog", "Are you sure?");
         if (result)
         {
-            RemoveAccount(account);
+            RemoveAccountAsync(account);
         }
     }
 
@@ -187,5 +211,27 @@
     .table-hover tbody tr:hover {
         background-color: #8e8a8a;
         cursor: pointer;
+    }
+    .table-responsive-cell {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .table-responsive-cell td {
+        white-space: nowrap;
+    }
+    @@media (max-width: 576px) {
+    .table thead th {
+        font-size: 0.8rem; /* Reduce el tamaño de los encabezados */
+    }
+    .table tbody td {
+        font-size: 0.8rem; /* Reduce el tamaño de las celdas */
+    }
+    .form-control-sm {
+        padding: 0.25rem 0.5rem; /* Reduce el padding de los inputs pequeños */
+    }
+    .btn-sm {
+        padding: 0.25rem 0.5rem; /* Reduce el padding de los botones pequeños */
+        font-size: 0.8rem; /* Reduce el tamaño de fuente de los botones */
+    }
     }
 </style>
