@@ -75,3 +75,42 @@ main {
         padding-right: 1.5rem !important;
     }
 }
+
+/* site.css */
+
+/* Estilos globales para pantallas pequeñas */
+@media (max-width: 576px) {
+    /* Reduce el tamaño de todos los textos */
+    body {
+        font-size: 0.8rem;
+    }
+
+    /* Opcional: Ajustar los tamaños de encabezados */
+    h1, h2, h3, h4, h5, h6 {
+        font-size: 0.8em;
+    }
+
+    /* Ajustar el tamaño de los botones */
+    button, .btn {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Ajustar el tamaño de los inputs */
+    input, .form-control {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Ajustar el tamaño de las tablas */
+    .table {
+        font-size: 0.8rem;
+    }
+
+    /* Ajustar los márgenes y padding generales */
+    * {
+        margin: 0.5rem;
+        padding: 0.5rem;
+    }
+}
+

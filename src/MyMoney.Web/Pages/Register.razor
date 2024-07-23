@@ -1,37 +1,47 @@
+@page "/register"
+
 @using System.ComponentModel.DataAnnotations
 @using MyMoney.Api.Sdk.Api
+@using MyMoney.Api.Sdk.Api.Users.Requests
 @using MyMoney.Web.Services
 @using MyMoney.Web.Components.UI
+@using Newtonsoft.Json
 @inject MyMoneyApiClient ApiClient
 @inject CacheService CacheService
 @inject NavigationManager navigation
-@page "/login"
 @layout LoginLayout
 
 <div class="grid">
-    
     <div class="order__left centered">
         <div class="form">
-            <div class="logo">
-
-            </div>
+            <div class="logo"></div>
 
             <h4>
-                Keep your money organized so you can be chill like a capybara in a hot spring 🤎
+                Sign up and keep your money organized like a capybara in a hot spring 🤎
             </h4>
 
-            <EditForm Model="loginModel" OnValidSubmit="HandleValidSubmit">
+            <EditForm Model="registerModel" OnValidSubmit="HandleValidSubmit">
                 <DataAnnotationsValidator/>
                 <ValidationSummary/>
 
                 <div class="form-group">
+                    <label for="name">Name</label>
+                    <InputText id="name" class="form-control" @bind-Value="registerModel.Name"/>
+                </div>
+
+                <div class="form-group">
                     <label for="email">Email</label>
-                    <InputText id="email" class="form-control" @bind-Value="loginModel.Email"/>
+                    <InputText id="email" class="form-control" @bind-Value="registerModel.Email"/>
                 </div>
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password"/>
+                    <InputText id="password" type="password" class="form-control" @bind-Value="registerModel.Password"/>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <InputText id="confirmPassword" type="password" class="form-control" @bind-Value="registerModel.ConfirmPassword"/>
                 </div>
 
                 @if (isLoading)
@@ -42,7 +52,7 @@
                 }
                 else
                 {
-                    <button type="submit" class="login__button">Login</button>
+                    <button type="submit" class="login__button">Register</button>
                 }
             </EditForm>
 
@@ -51,61 +61,81 @@
                 <div class="m-4 text-danger text-center">@Message</div>
             }
 
-            <div class="signup">
-                <a href="#" class="forgot__password">Forgot Password?</a>
-            </div>
-
+            @if (ErrorMessages.Any())
+            {
+                @foreach(var error in ErrorMessages)
+                {
+                    <div class="text-danger text-start">- @error</div>
+                }
+            }
+            
             <div class="signup">
                 <label class="remember_me">
-                    Don't have an account?</label><a href="register" class="forgot__password" style="text-decoration: none;"><strong>Sign up for free.</strong></a>
+                    Already have an account?</label><a href="/login" class="forgot__password" style="text-decoration: none;"><strong>Log in here.</strong></a>
             </div>
-
         </div>
     </div><!-- order__left centered -->
 
     <div class="order__right centered no__overflow">
         <img class="img" src="https://th.bing.com/th/id/OIG3.LMRYDpHqBwqagT_ok2Zl?w=1024&h=1024&rs=1&pid=ImgDetMain"/>
     </div><!-- order__right centered no__overflow -->
-
 </div><!-- end grid -->
 
-
-
 @code {
-    private LoginModel loginModel = new LoginModel();
+    private RegisterModel registerModel = new RegisterModel();
     private string Message = "";
     private bool isLoading = false;
+    private List<string> ErrorMessages = new List<string>();
 
     private async Task HandleValidSubmit()
     {
         Message = string.Empty;
         isLoading = true;
-        await OnLogin(loginModel.Email, loginModel.Password);
+        await OnRegister(registerModel.Name, registerModel.Email, registerModel.Password, registerModel.ConfirmPassword);
         isLoading = false;
     }
 
-    public class LoginModel
+    public class RegisterModel
     {
         [Required]
+        public string Name { get; set; }
+
+        [Required]
+        [EmailAddress]
         public string Email { get; set; }
 
         [Required]
+        [MinLength(6)]
         public string Password { get; set; }
+
+        [Required]
+        [Compare("Password", ErrorMessage = "Passwords do not match.")]
+        public string ConfirmPassword { get; set; }
+        
     }
 
-    private async Task OnLogin(string email, string password)
+    private async Task OnRegister(string name, string email, string password, string confirmPassword)
     {
         try
         {
-            var loginResponse = await ApiClient.Users.UserLogin(email, password);
-            if (loginResponse.StatusCode == System.Net.HttpStatusCode.OK)
+            var newUser = new CreateUserRequest
             {
-                await CacheService.SetValueAsync<string>("UserToken", loginResponse.Data.token);
+                Email = email,
+                Name = name,
+                Password = password,
+                DefaultCurrency = "UYU"
+            };
+            
+            var registerResponse = await ApiClient.Users.CreateUser(newUser);
+            if (registerResponse.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                await CacheService.SetValueAsync<string>("UserToken", registerResponse.Data.Token);
                 navigation.NavigateTo("/accounts");
             }
             else
             {
-                Message = "Invalid email or password";
+                Message = registerResponse.ErrorMessage;
+                ErrorMessages = registerResponse.ErrorList;
             }
         }
         catch (Exception ex)
