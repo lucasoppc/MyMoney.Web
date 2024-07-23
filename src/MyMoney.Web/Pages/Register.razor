@@ -21,8 +21,6 @@
             </h4>
 
             <EditForm Model="registerModel" OnValidSubmit="HandleValidSubmit">
-                <DataAnnotationsValidator/>
-                <ValidationSummary/>
 
                 <div class="form-group">
                     <label for="name">Name</label>
@@ -43,7 +41,7 @@
                     <label for="confirmPassword">Confirm Password</label>
                     <InputText id="confirmPassword" type="password" class="form-control" @bind-Value="registerModel.ConfirmPassword"/>
                 </div>
-
+                
                 @if (isLoading)
                 {
                     <div class="d-flex justify-content-center align-items-center">
@@ -54,20 +52,25 @@
                 {
                     <button type="submit" class="login__button">Register</button>
                 }
+                
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                
+                <ul>
+                    @if (!string.IsNullOrEmpty(Message))
+                    {
+                    <div class="text-danger text-start"><li>@Message</li></div>
+                    }
+
+                    @if (ErrorMessages.Any())
+                    {
+                    @foreach(var error in ErrorMessages)
+                    {
+                    <div class="text-danger text-start"><li>@error</li></div>
+                    }
+                    }
+                </ul>
             </EditForm>
-
-            @if (!string.IsNullOrEmpty(Message))
-            {
-                <div class="m-4 text-danger text-center">@Message</div>
-            }
-
-            @if (ErrorMessages.Any())
-            {
-                @foreach(var error in ErrorMessages)
-                {
-                    <div class="text-danger text-start">- @error</div>
-                }
-            }
             
             <div class="signup">
                 <label class="remember_me">
@@ -135,7 +138,7 @@
             else
             {
                 Message = registerResponse.ErrorMessage;
-                ErrorMessages = registerResponse.ErrorList;
+                ErrorMessages = registerResponse.ErrorList ?? new List<string>();
             }
         }
         catch (Exception ex)
