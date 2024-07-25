@@ -1,6 +1,7 @@
 
 @using Microsoft.AspNetCore.Components.Web
 @using System
+@using System.Globalization
 @using System.Text
 @using System.Text.Json
 @using Microsoft.AspNetCore.WebUtilities
@@ -22,12 +23,12 @@
 
 @if (showLogout)
 {
-    <div class="row align-items-center">
+    <div class="row align-items-end">
         <div class="col">
             <div class="col d-flex align-items-center justify-content-between">
-                <p class="m-0">@UserName</p>
+                <p class="m-0">@CultureInfo.CurrentCulture.TextInfo.ToTitleCase(UserName)</p>
                 <div class=""  @onclick="Logout">
-                    <a class="btn btn-outline-danger">Logout</a>
+                    <a class="m-2" href="#">Logout</a>
                 </div>
             </div>
         </div>

@@ -12,11 +12,11 @@
         <div class="row">
             <div class="col-lg-3 col-sm-12">
                 <label for="accountFrom">From</label>
-                <input id="accountFrom"  value="@AccountFrom?.Name" disabled />
+                <input id="accountFrom" class="form-control form-control-sm" value="@AccountFrom?.Name" disabled />
             </div>
             <div class="col-lg-3 col-sm-12">
                 <label for="accountTo">To</label>
-                <select @bind="AccountToId" id="accountTo">
+                <select @bind="AccountToId" id="accountTo" class="form-control form-control-sm">
                     <option value="">Select account</option>
                     @foreach (var account in Accounts)
                     {
@@ -26,10 +26,10 @@
             </div>
             <div class="col-lg-3 col-sm-12">
                 <label for="amount">Amount</label>
-                <input @bind="Amount" id="amount" type="number" />
+                <input @bind="Amount" placeholder="Amount" id="amount" type="number" class="form-control form-control-sm"/>
             </div>
-            <div class="col-lg-3 col-sm-12">
-                <button class="btn btn-primary" @onclick="Transfer">Transfer</button>
+            <div class="col-lg-3 col-sm-12 mt-auto">
+                <button class="btn btn-sm btn-primary " @onclick="Transfer">Transfer</button>
             </div>
         </div>
     </div>
@@ -46,7 +46,7 @@
     public EventCallback OnTransfer { get; set; }
 
     public string AccountToId { get; set; }
-    public decimal Amount { get; set; }
+    public decimal? Amount { get; set; }
 
     public string token;
     
@@ -73,8 +73,8 @@
         {
             var response = await apiClient.Transactions.TransferToAccount(token, new TransferToAccountRequest
             {
-                Amount = Amount,
-                FromAccountId = AccountFrom.Id,
+                Amount = Amount.Value,
+                FromAccountId = AccountFrom?.Id,
                 ToAccountId = AccountToId
             });
 

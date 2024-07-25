@@ -25,17 +25,14 @@
         <tr>
             <td>
                 <input id="accountName"
-                       placeholder="Search..."
+                       placeholder="Search or Create..."
                        class="form-control form-control-sm"
                        @bind="newAccountName"
                        @oninput="(text) => OnTypeAccountName(text)"
                 />
             </td>
             <td>
-                <input id="accountAmount"
-                       type="number"
-                       class="form-control form-control-sm"
-                       @bind="newAccountAmount" />
+                <!-- TODO: We could set amount when creating a new account. -->
             </td>
             <td>
                 <select id="currency"
@@ -208,6 +205,12 @@
 </script>
 
 <style>
+    .table {
+        width: 100%;
+        table-layout: auto;
+        /* Optional: Add a max-width if you want to limit the table's width */
+        max-width: 100%;
+    }
     .table-hover tbody tr:hover {
         background-color: #8e8a8a;
         cursor: pointer;
