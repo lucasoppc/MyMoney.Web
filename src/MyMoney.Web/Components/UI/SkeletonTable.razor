@@ -1,0 +1,65 @@
+
+<div class="container mt-4">
+    <div class="skeleton skeleton-title"></div>
+    <div class="skeleton skeleton-text"></div>
+    <div class="skeleton skeleton-text"></div>
+    <div class="skeleton skeleton-text"></div>
+    <div class="skeleton skeleton-rect mt-3"></div>
+    <div class="skeleton skeleton-circle mt-3"></div>
+    <div class="skeleton skeleton-button mt-3"></div>
+</div>
+
+<style>
+    /* styles.css */
+    @@keyframes shimmer {
+        0% {
+            background-position: -100% 0;
+        }
+        100% {
+            background-position: 100% 0;
+        }
+    }
+
+    .skeleton {
+        background: linear-gradient(90deg, #e0e0e0 25%, #f8f8f8 50%, #e0e0e0 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
+    }
+
+    /* Specific sizes for skeleton elements */
+    .skeleton-text {
+        height: 1em;
+        margin-bottom: 0.5em;
+    }
+
+    .skeleton-title {
+        height: 1.5em;
+        width: 60%;
+        margin-bottom: 1em;
+    }
+
+    .skeleton-paragraph {
+        height: 1em;
+        margin-bottom: 0.5em;
+    }
+
+    .skeleton-rect {
+        height: 150px;
+        width: 100%;
+    }
+
+    .skeleton-circle {
+        height: 50px;
+        width: 50px;
+        border-radius: 50%;
+    }
+
+    .skeleton-button {
+        height: 2.5em;
+        width: 100px;
+        border-radius: 0.25em;
+        margin-top: 1em;
+    }
+
+</style>

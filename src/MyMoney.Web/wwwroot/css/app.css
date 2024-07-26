@@ -2,10 +2,45 @@ html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+:root {
+    --background-color: #f0f0f0;
+    --text-color: #333333;
+}
+
+.dark-mode {
+    --background-color: #2e2e2e;
+    --text-color: #dddddd;
+}
+
+body {
+    background-color: #232323;
+    color: #e8dcdc;
+}
+
+td, tr {
+    background-color: #232323;
+    color: #e8dcdc;
+}
+
+input, textarea, select, .form-control, .form-control:focus, .form-control:disabled {
+    background-color: #2e2e2e;
+    color: #e8dcdc;
+    border: 1px solid #dddddd;
+}
+
+.dark-mode input, .dark-mode textarea, .dark-mode select {
+    background-color: #444444;
+    color: #e8dcdc;
+    border: 1px solid #dddddd;
+}
+
 h1:focus {
     outline: none;
 }
 
+p {
+    color: #e8dcdc;
+}
 a, .btn-link {
     color: #0071c1;
 }

@@ -25,12 +25,6 @@
     <TransferToAccountComponent AccountFrom="@account" OnTransfer="UpdateTransactions"/>
 </div>
 
-@if (transactions == null)
-{
-    <Spinner />
-}
-else
-{
 <table class="table table-hover table-responsive-sm col-12 col-xl-6">
     <thead>
     <tr>
@@ -69,44 +63,71 @@ else
         <td>
             @if(isLoading)
             {
-            <Spinner Width="40px" />
+                <Spinner Width="40px" />
             }
             else
             {
-            <button class="btn btn-outline-primary btn-sm"
-                    disabled="@(!isCreatingTransaction)"
-                    @onclick="CreateTransaction">
-                Create
-            </button>
+                <button class="btn btn-primary btn-sm"
+                        disabled="@(!isCreatingTransaction)"
+                        @onclick="CreateTransaction">
+                    Create
+                </button>
             }
         </td>
         <td>
 
         </td>
     </tr>
-    @foreach (var transaction in transactions)
+    @if (transactions == null)
     {
-    <tr @onclick="() => OnClickRow(transaction)">
-        <td class="table-responsive-cell">@transaction.Date.ToString("dd/MM/yyyy")</td>
-        <td class="table-responsive-cell">@transaction.Description</td>
-        <td class="@(transaction.Amount < 0 ? "text-danger" : "text-success") table-responsive-cell text-end">
-            @transaction.Amount
-        </td>
-        <td>
-            @transaction.Currency
-        </td>
-        <td>
-            <button class="btn btn-outline-danger btn-sm"
-                    @onclick="() => ShowConfirmDialog(transaction)">
-                Delete
-            </button>
-        </td>
-    </tr>
+        @foreach(var i in Enumerable.Range(0, 10))
+        {
+        <tr>
+            <td class="table-responsive-cell">
+                <div class="skeleton skeleton-text"></div>
+            </td>
+            <td class="table-responsive-cell">
+                <div class="skeleton skeleton-text"></div>
+            </td>
+            <td class="table-responsive-cell">
+                <div class="skeleton skeleton-text"></div>
+            </td>
+            <td class="table-responsive-cell">
+                <div class="skeleton skeleton-text"></div>
+            </td>
+            <td>
+                <div class="skeleton skeleton-text"></div>
+            </td>
+        </tr>
+        }
     }
+    else
+    {
+        @foreach (var transaction in transactions)
+        {
+            <tr @onclick="() => OnClickRow(transaction)">
+                <td class="table-responsive-cell">@transaction.Date.ToString("dd/MM/yyyy")</td>
+                <td class="table-responsive-cell">@transaction.Description</td>
+                <td class="@(transaction.Amount < 0 ? "text-danger" : "text-success") table-responsive-cell text-end">
+                    @transaction.Amount
+                </td>
+                <td>
+                    @transaction.Currency
+                </td>
+                <td>
+                    <button class="btn btn-outline-danger btn-sm"
+                            @onclick="() => ShowConfirmDialog(transaction)">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        } 
+    }
+    
     </tbody>
 </table>
 
-}
+
 
 @code {
     [Parameter]
@@ -142,7 +163,9 @@ else
     private async Task UpdateTransactions()
     {
         // wait a few seconds for the transaction be processed and amount updated
-        Thread.Sleep(5000);
+        await Task.Delay(1000); 
+        await OnParametersSetAsync();
+        await Task.Delay(8000); 
         await OnParametersSetAsync();
     }
     
@@ -233,11 +256,11 @@ else
         max-width: 100%;
     }
     .table-hover tbody tr:hover {
-        background-color: #8e8a8a;
+        background-color: rgba(38, 101, 227, 0.48);
         cursor: pointer;
     }
     .highlighted-background {
-        background-color: #f0f8ff; /* Puedes cambiar este color al que prefieras */
+        background-color: #202020; /* Puedes cambiar este color al que prefieras */
         padding: 10px; /* Opcional: Agrega un poco de padding para mayor claridad */
         border-radius: 5px; /* Opcional: Agrega bordes redondeados */
     }

@@ -1,7 +1,7 @@
 @using MyMoney.Api.Sdk.Api
 @using MyMoney.Api.Sdk.Api.Accounts.Responses
 @using MyMoney.Api.Sdk.Api.Transactions.Requests
-@using MyMoney.Api.Sdk.Api.Transactions.Responses
+@using MyMoney.Web.Components.UI
 @using MyMoney.Web.Services
 @inject MyMoneyApiClient apiClient
 @inject CacheService cache
@@ -29,7 +29,16 @@
                 <input @bind="Amount" placeholder="Amount" id="amount" type="number" class="form-control form-control-sm"/>
             </div>
             <div class="col-lg-3 col-sm-12 mt-auto">
-                <button class="btn btn-sm btn-primary " @onclick="Transfer">Transfer</button>
+                <button class="btn btn-sm btn-primary " @onclick="Transfer" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <Spinner Width="30px" />
+                    }
+                    else
+                    {
+                        <span>Transfer</span>
+                    }
+                </button>
             </div>
         </div>
     </div>
@@ -47,7 +56,7 @@
 
     public string AccountToId { get; set; }
     public decimal? Amount { get; set; }
-
+    public bool isLoading = false;
     public string token;
     
     private List<AccountResponse> Accounts { get; set; } = new List<AccountResponse>();
@@ -71,6 +80,7 @@
     {
         if (!string.IsNullOrWhiteSpace(AccountToId) && Amount > 0)
         {
+            isLoading = true;
             var response = await apiClient.Transactions.TransferToAccount(token, new TransferToAccountRequest
             {
                 Amount = Amount.Value,
@@ -82,8 +92,9 @@
             {
                 AccountToId = string.Empty;
                 Amount = 0;
-                await OnTransfer.InvokeAsync();
+                OnTransfer.InvokeAsync(); // do not await, this is just a background polling.
             }
+            isLoading = false;
         }
     }
 }

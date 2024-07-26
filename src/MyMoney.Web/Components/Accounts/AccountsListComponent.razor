@@ -9,8 +9,6 @@
 @inject NavigationManager navigation;
 
 <div>
-    @if (!isLoading)
-    {
     <table class="table table-hover table-responsive-sm col-12 col-xl-6">
         <thead>
         <tr>
@@ -22,70 +20,88 @@
         </tr>
         </thead>
         <tbody>
-        <tr>
-            <td>
-                <input id="accountName"
-                       placeholder="Search or Create..."
-                       class="form-control form-control-sm"
-                       @bind="newAccountName"
-                       @oninput="(text) => OnTypeAccountName(text)"
-                />
-            </td>
-            <td>
-                <!-- TODO: We could set amount when creating a new account. -->
-            </td>
-            <td>
-                <select id="currency"
-                        @bind="newAccountCurrency"
-                        class="form-control form-control-sm">
-                    <option value="UYU">UYU</option>
-                    <option value="USD">USD</option>
-                </select>
-            </td>
-            <td>
-                <input id="bankAccount"
-                       placeholder="Bank Account"
-                       class="form-control form-control-sm"
-                       @bind="newBankAccount" />
-            </td>
-            <td>
-                <button class="btn btn-outline-primary btn-sm"
-                        disabled="@(!isCreatingAccount)"
-                        @onclick="AddAccount">
-                    Create
-                </button>
-            </td>
-        </tr>
-        @foreach (var account in accountsFiltered.OrderBy(x => x.Name))
-        {
-        <tr>
-            <td @onclick="() => OnClickRow(account)" class="table-responsive-cell">@account.Name</td>
-            <td @onclick="() => OnClickRow(account)" class="@(account.Amount < 0 ? "text-danger" : "text-success") table-responsive-cell">
-                @account.Amount
-            </td>
-            <td @onclick="() => OnClickRow(account)">
-                @account.Currency
-            </td>
-            <td @onclick="() => OnClickRow(account)" class="table-responsive-cell">
-                @account.BankAccount
-            </td>
-            <td>
-                <button class="btn btn-outline-danger btn-sm"
-                        @onclick="() => ShowConfirmDialog(account)">
-                    Delete
-                </button>
-            </td>
-        </tr>
-        }
+            <tr>
+                <td>
+                    <input id="accountName"
+                           placeholder="Search or Create..."
+                           class="form-control form-control-sm"
+                           @bind="newAccountName"
+                           @oninput="(text) => OnTypeAccountName(text)"/>
+                </td>
+                <td>
+                    <!-- TODO: We could set amount when creating a new account. -->
+                </td>
+                <td>
+                    <select id="currency"
+                            @bind="newAccountCurrency"
+                            class="form-control form-control-sm">
+                        <option value="UYU">UYU</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </td>
+                <td>
+                    <input id="bankAccount"
+                           placeholder="Bank Account"
+                           class="form-control form-control-sm"
+                           @bind="newBankAccount"/>
+                </td>
+                <td>
+                    <button class="btn btn-primary btn-sm"
+                            disabled="@(!isCreatingAccount)"
+                            @onclick="AddAccount">
+                        Create
+                    </button>
+                </td>
+            </tr>
+            @if (isLoading)
+            {
+               @foreach(var i in Enumerable.Range(0, 10))
+               {
+                   <tr>
+                       <td class="table-responsive-cell">
+                           <div class="skeleton skeleton-text"></div>
+                       </td>
+                       <td class="table-responsive-cell">
+                           <div class="skeleton skeleton-text"></div>
+                       </td>
+                       <td class="table-responsive-cell">
+                           <div class="skeleton skeleton-text"></div>
+                       </td>
+                       <td class="table-responsive-cell">
+                           <div class="skeleton skeleton-text"></div>
+                       </td>
+                       <td>
+                           <div class="skeleton skeleton-text"></div>
+                       </td>
+                   </tr>
+               }
+            }
+            else
+            {
+                @foreach (var account in accountsFiltered.OrderBy(x => x.Name))
+                {
+                    <tr>
+                        <td @onclick="() => OnClickRow(account)" class="table-responsive-cell">@account.Name</td>
+                        <td @onclick="() => OnClickRow(account)" class="@(account.Amount < 0 ? "text-danger" : "text-success") table-responsive-cell">
+                            @account.Amount
+                        </td>
+                        <td @onclick="() => OnClickRow(account)">
+                            @account.Currency
+                        </td>
+                        <td @onclick="() => OnClickRow(account)" class="table-responsive-cell">
+                            @account.BankAccount
+                        </td>
+                        <td>
+                            <button class="btn btn-outline-danger btn-sm"
+                                    @onclick="() => ShowConfirmDialog(account)">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
         </tbody>
     </table>
-
-    }
-    else
-    {
-        <p>Loading user accounts</p>
-        <Spinner/>
-    }
 </div>
 
 @code {
@@ -212,7 +228,7 @@
         max-width: 100%;
     }
     .table-hover tbody tr:hover {
-        background-color: #8e8a8a;
+        background-color: rgba(38, 101, 227, 0.48);
         cursor: pointer;
     }
     .table-responsive-cell {

@@ -1,0 +1,53 @@
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton {
+    height: 20px;
+    background-color: #2e2e2e; /* Color de fondo oscuro */
+    border-radius: 4px;
+    animation: shimmer 1.5s infinite linear;
+    background: linear-gradient(90deg, #2e2e2e 25%, #3a3a3a 50%, #2e2e2e 75%); /* Colores ajustados para el modo oscuro */
+    background-size: 200% 100%;
+}
+
+
+/* Specific sizes for skeleton elements */
+.skeleton-text {
+    height: 1em;
+    margin-bottom: 0.5em;
+}
+
+.skeleton-title {
+    height: 1.5em;
+    width: 60%;
+    margin-bottom: 1em;
+}
+
+.skeleton-paragraph {
+    height: 1em;
+    margin-bottom: 0.5em;
+}
+
+.skeleton-rect {
+    height: 150px;
+    width: 100%;
+}
+
+.skeleton-circle {
+    height: 50px;
+    width: 50px;
+    border-radius: 50%;
+}
+
+.skeleton-button {
+    height: 2.5em;
+    width: 100px;
+    border-radius: 0.25em;
+    margin-top: 1em;
+}
