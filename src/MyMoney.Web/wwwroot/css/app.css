@@ -13,6 +13,7 @@ html, body {
 }
 
 body {
+    color-scheme: dark;
     background-color: #232323;
     color: #e8dcdc;
 }

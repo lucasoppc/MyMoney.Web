@@ -34,16 +34,8 @@
                     <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password"/>
                 </div>
 
-                @if (isLoading)
-                {
-                    <div class="d-flex justify-content-center align-items-center">
-                        <Spinner Width="50"/>
-                    </div>
-                }
-                else
-                {
-                    <button type="submit" class="login__button">Login</button>
-                }
+                <button type="submit" class="login__button @buttonClass" disabled="@isLoading">Login</button>
+                
             </EditForm>
 
             @if (!string.IsNullOrEmpty(Message))
@@ -75,6 +67,7 @@
     private LoginModel loginModel = new LoginModel();
     private string Message = "";
     private bool isLoading = false;
+    private string buttonClass => isLoading ? "skeleton skeleton-button" : string.Empty;
 
     private async Task HandleValidSubmit()
     {
@@ -124,7 +117,6 @@
     }
     body {
         min-height: 100vh;
-        background-color: #fff;
     }
     .grid {
         display: grid;
@@ -155,31 +147,10 @@
         margin-bottom: 12px;
     }
     h4 {
-        color: #867992;
         text-align: left;
         margin-bottom: 30px;
         letter-spacing: 0.2px;
         line-height: 20px;
-    }
-    input[type=text], input[type=password] {
-        width: 100%;
-        padding: 12px 16px;
-        margin: 16px 0;
-        display: block;
-        border: 1px solid #c8c3cf;
-        border-radius: 4px;
-        box-sizing: border-box;
-        background-color: #F6F5F7;
-        font-size: 16px;
-        color: #4F4659;
-        outline: none;
-        transition: box-shadow 0.25s ease-in-out,  background-image 0.25s;
-    }
-    input[type=text]:focus, input[type=password]:focus {
-        border-color: #A26ED4;
-        background: #FAF8FD;
-        background: #FDFCFE;
-        box-shadow: 0 0 0 0.25rem #ebd6ff;
     }
     ::-webkit-input-placeholder {
         color: #A29CA8;
@@ -204,19 +175,20 @@
         color: #867992;
     }
     .forgot__password {
-        color: #551A8B;
+        color: #e9e0fb;
         text-align: left;
         outline-color: #B595D4;
     }
     .forgot__password:active {
-        color: #867992;
+        color: #e0dae6;
     }
     .login__button {
         outline-color: #734E96;
         width: 100%;
+        margin-top:  1em;
         border: none;
         background-color: #A26ED4;
-        padding: 13px 17px;
+        padding: 10px 15px;
         color: #fff;
         border-radius: 0.25rem;
         font-size: 16px;
